@@ -28,7 +28,9 @@ var fs = require('fs'),
     platform = process.platform,
     isWindows = platform === 'win32',
     noWatch = (platform !== 'win32') || !fs.watch, //  && platform !== 'linux' - removed linux fs.watch usage #72
-    watchFile = platform === 'darwin' ? fs.watchFile : fs.watch, // lame :(
+    nodeVersion = process.versions.node.match(/^([0-9]+)\.?([0-9]*)/),
+    isNewWatch = (parseInt(nodeVersion[1]) > 0 || parseInt(nodeVersion[2]) >= 10),
+    watchFile = (platform === 'darwin' && !isNewWatch) ? fs.watchFile : fs.watch, // lame :(
     watchWorks = true, // whether or not fs.watch actually works on this platform, tested and set later before starting
     // create once, reuse as needed
     reEscComments = /\\#/g,
@@ -429,7 +431,7 @@ function readIgnoreFile(curr, prev) {
   var hadfile = false;
   // unless the ignore file was actually modified, do no re-read it
   // on darwin platform only
-  if (platform === 'darwin') {
+  if (platform === 'darwin' && !isNewWatch) {
     if(curr && prev && curr.mtime.valueOf() === prev.mtime.valueOf()) {
       return;
     }
